@@ -1,0 +1,32 @@
+sg_https:
+  name: "allow_https"
+  description: "Allowing HTTPS access to REST API"
+  cidr:
+    - "75.2.60.0/24"
+
+sg_http:
+  name: "allow_http"
+  description: "Allowing HTTP communication through cloud components"
+  cidr: "192.168.255.192/26"
+
+sg_ecstasktodb:
+  name: "ecstodb"
+  description: "Allowing access from ECS tasks to DB via database subnet"
+  cidr: 
+    - "192.168.255.224/28"
+
+sg_database:
+  name: "sg_database"
+  description: "Security group attached to database"
+  cidr:
+    - "192.168.255.224/28"
+
+sg_container_task:
+  name: "sg_container_task"
+  description: "Security group required for fargate"
+  cidr:
+    - "0.0.0.0/0"
+
+vpc:
+  name: "demo-vpc"
+  cidr: "192.168.255.192/26"

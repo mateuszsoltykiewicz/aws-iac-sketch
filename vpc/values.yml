@@ -1,0 +1,19 @@
+vpc:
+  name: "demo-vpc"
+  cidr: "192.168.255.192/26"
+  azs:
+    - us-east-1a
+    - us-east-1b
+  private_subnets:
+    - "192.168.255.192/29"
+    - "192.168.255.200/29"
+  public_subnets:
+    - "192.168.255.208/29"
+    - "192.168.255.216/29"
+  database_subnets:
+    - "192.168.255.224/29"
+    - "192.168.255.232/29"
+
+namespace:
+  name: demo
+  

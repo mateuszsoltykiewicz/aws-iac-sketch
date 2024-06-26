@@ -1,0 +1,66 @@
+include:
+  - "${CI_PROJECT_DIR}/gitlab-ci-templates/hidden-jobs.yml"
+
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "parent_pipeline"
+      when: always
+    - when: never
+variables:
+  TF_STATE_ADDRESS: https://gitlab.com/api/v4/projects/${CI_PROJECT_ID}/terraform/state
+  TF_HTTP_LOCK_METHOD: "POST"
+  TF_HTTP_UNLOCK_METHOD: "DELETE"
+  TF_HTTP_ADDRESS: ${TF_STATE_ADDRESS}/${DIR}
+  TF_HTTP_LOCK_ADDRESS: ${TF_HTTP_ADDRESS}/lock
+  TF_HTTP_UNLOCK_ADDRESS: ${TF_HTTP_ADDRESS}/unlock
+  TF_HTTP_USERNAME: ${GITLAB_USER_NAME}
+  TF_HTTP_PASSWORD: ${GITLAB_ACCESS_TOKEN}
+  TF_DIR: ${CI_PROJECT_DIR}/${DIR}/terraform
+  ARGS: "-lock=false"
+
+default:
+  tags:
+    - raspberry
+
+stages:
+  - Terraforms_validation
+  - IaC_plan_build
+  - IaC_plan_apply
+  - IaC_destroy
+
+terraform-init:
+  stage: Terraforms_validation
+  extends:
+    - .before-script
+    - .variables-specific-to-job
+    - .default-terraform-job
+
+terraform-plan:
+  stage: IaC_plan_build
+  extends:
+    - .before-script
+    - .variables-specific-to-job
+    - .default-terraform-job
+  dependencies:
+    - "terraform-init"
+
+terraform-apply:
+  stage: IaC_plan_apply
+  extends:
+    - .before-script
+    - .variables-specific-to-job
+    - .default-terraform-job
+  dependencies:
+    - "terraform-init"
+    - "terraform-plan"
+
+terraform-destroy:
+  stage: IaC_destroy
+  extends:
+    - .before-script
+    - .variables-specific-to-job
+    - .default-terraform-job
+  dependencies:
+    - "terraform-init"
+    - "terraform-plan"
+    - "terraform-apply"

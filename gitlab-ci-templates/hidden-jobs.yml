@@ -1,0 +1,30 @@
+.default-terraform-job:
+  allow_failure: false
+  script: terraform ${TERRAFORM_ACTION} ${ARGS}
+  interruptible: false
+  when: on_success
+
+.before-script:
+  before_script:
+    - cp -n ${CI_PROJECT_DIR}/terraform-templates/*.tf ${TF_DIR}
+    - cd ${TF_DIR}
+    - terraform init -lock=false
+
+.variables-specific-to-job:
+  rules:
+    - if: $CI_JOB_NAME == "terraform-init"
+      variables:
+        TERRAFORM_ACTION: "validate"
+        ARGS: ""
+    - if: $CI_JOB_NAME == "terraform-plan"
+      variables:
+        TERRAFORM_ACTION: "plan"
+        ARGS: "-lock=false"
+    - if: $CI_JOB_NAME == "terraform-apply"
+      variables:
+        TERRAFORM_ACTION: "apply"
+        ARGS: "-auto-approve -lock=false"
+    - if: $CI_JOB_NAME == "terraform-destroy"
+      variables:
+        TERRAFORM_ACTION: "destroy"
+        ARGS: "-auto-approve -lock=false"

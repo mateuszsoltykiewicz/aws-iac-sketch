@@ -1,0 +1,13 @@
+variables:
+  NAMESPACE: demo
+  BUILD_RDS: true
+  BUILD_VPC: true
+  BUILD_SG: true
+  BUILD_APP: true
+  BUILD_CLUSTER: true
+  BUILD_ECS_TASK: true
+  BUILD_SERVICE_DISCOVERY: true
+  BUILD_ALB: true
+  AWS_ACCOUNT: "211125452360"
+  ECR_ENDPOINT: "${AWS_ACCOUNT}..dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com"
+  REST_APP_REGISTRY: "demo-demo/rest-app"

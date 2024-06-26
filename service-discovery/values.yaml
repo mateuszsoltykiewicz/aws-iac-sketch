@@ -1,0 +1,9 @@
+vpc:
+  name: "demo-vpc"
+
+dns:
+  name: "demo.local"
+
+service_discovery:
+  name: "demo"
+  

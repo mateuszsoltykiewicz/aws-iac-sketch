@@ -1,0 +1,3 @@
+alb:
+  name: "demo"
+  vpc_name: "demo-vpc"

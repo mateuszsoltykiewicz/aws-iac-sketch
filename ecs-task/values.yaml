@@ -1,0 +1,24 @@
+cluster:
+  name: demo
+
+service:
+  discovery_name: "demo"
+  port_name: "rest-app-port"
+  dns_name: "rest-app.demo.local"
+  port: 8080
+
+vpc:
+  name: "demo-vpc"
+
+container:
+  rest:
+    image: ""
+
+security-groups:
+  names: 
+    - "allow_http" 
+    - "ecstodb"
+    - "sg_container_task"
+
+namespace:
+  name: "demo.local"
