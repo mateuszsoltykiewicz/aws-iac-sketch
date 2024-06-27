@@ -1,0 +1,167 @@
+include:
+  - "variables.yml"
+
+default:
+  tags:
+    - raspberry
+
+stages:
+  - VPC
+  - SecurityGroups
+  - ALB
+  - RDS
+  - APP
+  - Tasks
+
+VPC:
+  stage: VPC
+  variables:
+    DIR: vpc
+  trigger:
+    include: gitlab-ci-templates/children-gitlab-ci.yml
+    strategy: depend
+    forward:
+      pipeline_variables: true
+  only:
+    variables:
+      - $BUILD_VPC == "true"
+  allow_failure: false
+
+SecurityGroups:
+  stage: SecurityGroups
+  variables:
+    DIR: security-group
+  trigger:
+    include: gitlab-ci-templates/children-gitlab-ci.yml
+    strategy: depend
+    forward:
+      pipeline_variables: true
+  only:
+    variables:
+      - $BUILD_SG == "true"
+  allow_failure: false
+  dependencies:
+    - VPC
+
+ALB:
+  stage: alb
+  variables:
+    DIR: "alb"
+  trigger:
+    include: gitlab-ci-templates/children-gitlab-ci.yml
+    strategy: depend
+    forward:
+      pipeline_variables: true
+  only:
+    variables:
+      - $BUILD_ALB == "true"
+  allow_failure: false
+  dependencies:
+    - VPC
+    - SecurityGroups
+  
+
+RDS:
+  stage: RDS
+  variables:
+    DIR: rds
+  trigger:
+    include: gitlab-ci-templates/children-gitlab-ci.yml
+    strategy: depend
+    forward:
+      pipeline_variables: true
+  only:
+    variables:
+      - $BUILD_RDS == "true"
+  allow_failure: false
+  dependencies:
+    - VPC
+    - SecurityGroups
+
+AWS-Create-ECR:
+  stage: APP
+  script:
+    - aws ecr create-repository --repository-name ${REST_APP_REGISTRY}
+  only:
+    variables:
+      - $BUILD_APP == "true"
+  allow_failure: true
+
+Build-And-Copy-Image:
+  stage: APP
+  variables:
+    DIR: rest-app/docker
+  script:
+    - cd ${DIR}
+    - docker system prune -af
+    - docker build -t "${ECR_ENDPOINT}/${REST_APP_REGISTRY}:latest" .
+    - aws ecr get-login-password --region ${AWS_DEFAULT_REGION} | docker login --username AWS --password-stdin ECR_ENDPOINT
+    - docker push "${ECR_ENDPOINT}/${REST_APP_REGISTRY}:latest"
+    - docker system prune -af
+  only:
+    variables:
+      - $BUILD_APP == "true"
+  allow_failure: false
+  dependencies:
+    - AWS-Create-ECR
+
+Cluster:
+  stage: Tasks
+  variables:
+    DIR: cluster
+  trigger:
+    include: gitlab-ci-templates/children-gitlab-ci.yml
+    strategy: depend
+    forward:
+      pipeline_variables: true
+  only:
+    variables:
+      - $BUILD_CLUSTER == "true"
+  allow_failure: false
+  dependencies:
+    - VPC
+    - SecurityGroups
+    - RDS
+
+Service-Discovery:
+  stage: Tasks
+  variables:
+    DIR: service-discovery
+  trigger:
+    include: gitlab-ci-templates/children-gitlab-ci.yml
+    strategy: depend
+    forward:
+      pipeline_variables: true
+  only:
+    variables:
+      - $BUILD_SERVICE_DISCOVERY == "true"
+  allow_failure: false
+  dependencies:
+    - VPC
+    - SecurityGroups
+    - RDS
+    - Cluster
+    - Build-And-Copy-Image
+
+ECS-Task:
+  stage: Tasks
+  variables:
+    DIR: ecs-task
+  trigger:
+    include: gitlab-ci-templates/children-gitlab-ci.yml
+    strategy: depend
+    forward:
+      pipeline_variables: true
+  only:
+    variables:
+      - $BUILD_ECS_TASK == "true"
+  allow_failure: false
+  dependencies:
+    - VPC
+    - SecurityGroups
+    - RDS
+    - Cluster
+    - Service-Discovery
+    - Build-And-Copy-Image
+    - AWS-Create-ECR
+    - ALB
